@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Putzplan" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <link rel="manifest" href="manifest.json" />
+  <title>WG Putzplan</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #181818;
+      --bg3: #222222;
+      --line: rgba(255,255,255,0.08);
+      --line2: rgba(255,255,255,0.15);
+      --text: #f0ece4;
+      --muted: rgba(240,236,228,0.45);
+      --accent-f: #e8a598;
+      --accent-m: #8fb8d4;
+      --accent-f-bg: rgba(232,165,152,0.12);
+      --accent-m-bg: rgba(143,184,212,0.12);
+      --gold: #c9a84c;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 20px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .logo span {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .current-date {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: right;
+      line-height: 1.5;
+    }
+
+    /* ── Period strip ── */
+    .period-strip {
+      margin: 20px 24px 0;
+      padding: 14px 18px;
+      background: var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .period-nav {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--line2);
+      background: transparent;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .period-nav:active { background: var(--bg3); }
+
+    .period-center { text-align: center; }
+
+    .period-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+
+    .period-sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .period-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      margin-right: 6px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+    }
+
+    /* ── Cards grid ── */
+    .cards {
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.2s;
+      animation: slideIn 0.3s ease both;
+    }
+
+    .card:active { border-color: var(--line2); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card:nth-child(1) { animation-delay: 0.04s; }
+    .card:nth-child(2) { animation-delay: 0.08s; }
+    .card:nth-child(3) { animation-delay: 0.12s; }
+    .card:nth-child(4) { animation-delay: 0.16s; }
+    .card:nth-child(5) { animation-delay: 0.20s; }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .avatar-f { background: var(--accent-f-bg); color: var(--accent-f); border: 1px solid rgba(232,165,152,0.25); }
+    .avatar-m { background: var(--accent-m-bg); color: var(--accent-m); border: 1px solid rgba(143,184,212,0.25); }
+
+    .card-body { flex: 1; min-width: 0; }
+
+    .card-name {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .card-task {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .extras {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+    }
+
+    .pill {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+    }
+
+    .pill-m { background: var(--accent-m-bg); color: var(--accent-m); border: 1px solid rgba(143,184,212,0.2); }
+    .pill-f { background: var(--accent-f-bg); color: var(--accent-f); border: 1px solid rgba(232,165,152,0.2); }
+    .pill-extra { background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2); }
+
+    /* ── Footer ── */
+    footer {
+      padding: 12px 24px 20px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-info {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1.6;
+    }
+
+    .install-btn {
+      font-size: 11px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line2);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.04em;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .install-btn:active { color: var(--text); border-color: var(--gold); }
+
+    /* ── Today highlight ── */
+    .today-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .today-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg3);
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 12px;
+      color: var(--text);
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">WG<br><span>Putzplan</span></div>
+    <div class="current-date" id="currentDate"></div>
+  </header>
+
+  <div class="period-strip">
+    <button class="period-nav" id="prev">‹</button>
+    <div class="period-center">
+      <div class="period-label" id="periodLabel"></div>
+      <div class="period-sub" id="periodSub"></div>
+    </div>
+    <button class="period-nav" id="next">›</button>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <footer>
+    <div class="footer-info" id="footerInfo"></div>
+    <button class="install-btn" id="installBtn" style="display:none">+ Homescreen</button>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const people = [
+  { name: "Nike",    gender: "f", initials: "NK" },
+  { name: "Claudia", gender: "f", initials: "CL" },
+  { name: "Chrissi", gender: "f", initials: "CH" },
+  { name: "Tobi",    gender: "m", initials: "TO" },
+  { name: "Dave",    gender: "m", initials: "DV" },
+];
+
+const taskDefs = [
+  { label: "Küchendienst",    desc: "Herd, Mikro, Arbeitsplatten" },
+  { label: "Mülldienst",      desc: "Mülleimer leeren & rausbringen" },
+  { label: "Bodendienst",     desc: "Staubsaugen & wischen" },
+  { label: "Pfand & Altglas", desc: "Pfandflaschen & Glascontainer" },
+  { label: "Mädlsbad",        desc: "Bad putzen & schrubben" },
+];
+
+// Pre-verified schedule: 6 rotations, no duplicates per row, index 4 (Mädlsbad)
+// never at positions 3 or 4 (Tobi / Dave).
+// [Nike, Claudia, Chrissi, Tobi, Dave] → task index
+const schedule = [
+  [0, 1, 4, 2, 3],  // Küche Müll  Mädlsbad Boden  Pfand
+  [2, 4, 1, 3, 0],  // Boden Mädlsbad Müll  Pfand  Küche
+  [4, 3, 0, 1, 2],  // Mädlsbad Pfand Küche  Müll   Boden
+  [1, 0, 3, 2, 4],  // Müll  Küche  Pfand  Boden  Mädlsbad ← fix needed
+];
+
+// Build schedule properly: generate all permutations where pos[3]≠4 && pos[4]≠4
+function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  return arr.flatMap((v, i) =>
+    permutations([...arr.slice(0,i), ...arr.slice(i+1)]).map(p => [v, ...p])
+  );
+}
+
+const validPerms = permutations([0,1,2,3,4])
+  .filter(p => p[3] !== 4 && p[4] !== 4);
+
+// Pick 6 with no immediate repeat for any person
+function buildSchedule() {
+  const chosen = [validPerms[0]];
+  for (const perm of validPerms.slice(1)) {
+    if (chosen.length === 6) break;
+    const prev = chosen[chosen.length - 1];
+    if (!perm.some((t, i) => t === prev[i])) chosen.push(perm);
+  }
+  return chosen;
+}
+
+const SCHEDULE = buildSchedule();
+const CYCLE = SCHEDULE.length; // 6 rotations = 12 weeks
+
+// ── Date logic ────────────────────────────────────────────────────────────────
+
+// Start of the first rotation (Monday of the week you want to begin)
+// Set this to the Monday your plan starts — adjust as needed
+const START_DATE = new Date('2025-01-06'); // Monday Jan 6 2025
+
+function getRotationForDate(date) {
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeks = Math.floor((date - START_DATE) / msPerWeek);
+  const period = Math.max(0, Math.floor(weeks / 2));
+  return period % CYCLE;
+}
+
+function getPeriodDates(periodOffset) {
+  const msPerPeriod = 14 * 24 * 60 * 60 * 1000;
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const today = new Date();
+  const weeksElapsed = Math.floor((today - START_DATE) / msPerWeek);
+  const currentPeriod = Math.floor(weeksElapsed / 2);
+  const targetPeriod = currentPeriod + periodOffset;
+  const start = new Date(START_DATE.getTime() + targetPeriod * msPerPeriod);
+  const end = new Date(start.getTime() + msPerPeriod - 1);
+  return { start, end, periodIndex: targetPeriod };
+}
+
+function fmt(date) {
+  return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+}
+
+function fmtFull(date) {
+  return date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' });
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let offset = 0; // 0 = current period
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function render() {
+  const { start, end, periodIndex } = getPeriodDates(offset);
+  const rotation = periodIndex % CYCLE;
+  const row = SCHEDULE[rotation];
+  const isCurrentPeriod = offset === 0;
+
+  // Header date
+  document.getElementById('currentDate').innerHTML =
+    `Heute<br>${fmtFull(new Date())}`;
+
+  // Period strip
+  document.getElementById('periodLabel').textContent =
+    `${fmt(start)} – ${fmt(end)}`;
+  document.getElementById('periodSub').innerHTML = isCurrentPeriod
+    ? `<span class="today-badge"><span class="today-pulse"></span>Aktuelle Periode</span>`
+    : `Rotation ${(rotation + 1)} von ${CYCLE}`;
+
+  // Cards
+  const container = document.getElementById('cards');
+  container.innerHTML = people.map((p, i) => {
+    const task = taskDefs[row[i]];
+    const isMale = p.gender === 'm';
+    const isMädlsbad = row[i] === 4;
+    return `
+      <div class="card">
+        <div class="avatar avatar-${p.gender}">${p.initials}</div>
+        <div class="card-body">
+          <div class="card-name">${p.name}</div>
+          <div class="card-task">${task.label}</div>
+          <div class="card-desc">${task.desc}</div>
+        </div>
+        <div class="extras">
+          <span class="pill pill-${p.gender}">${p.gender === 'f' ? 'sie' : 'er'}</span>
+          ${isMale ? '<span class="pill pill-extra">+ Typen-Bad</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Footer
+  document.getElementById('footerInfo').innerHTML =
+    `Rotation ${rotation + 1} / ${CYCLE}<br>Zyklus: ${CYCLE * 2} Wochen`;
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+
+document.getElementById('prev').addEventListener('click', () => {
+  offset--;
+  render();
+});
+document.getElementById('next').addEventListener('click', () => {
+  offset++;
+  render();
+});
+
+// ── PWA install ───────────────────────────────────────────────────────────────
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'block';
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) {
+    showToast('Öffne diese Seite in Chrome/Safari und wähle "Zum Homescreen"');
+    return;
+  }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') showToast('App installiert! 🎉');
+  deferredPrompt = null;
+  document.getElementById('installBtn').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => showToast('Erfolgreich installiert!'));
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Service Worker ────────────────────────────────────────────────────────────
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+render();
+</script>
+</body>
+</html>
